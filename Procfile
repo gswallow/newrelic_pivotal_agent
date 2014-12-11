@@ -1,1 +1,1 @@
-rabbitmq_newrelic_agent:  ruby pivotal_agent
+newrelic_rabbitmq_agent:  ruby pivotal_agent
