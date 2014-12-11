@@ -33,7 +33,7 @@ require 'uri'
 module NewRelic
   module RabbitMQPlugin
     class Agent < NewRelic::Plugin::Agent::Base
-      agent_guid 'com.pivotal.newrelic.plugin.rabbitmq'
+      agent_guid 'com.indigobio.newrelic.plugin.rabbitmq'
       agent_version '1.0.5'
       agent_config_options :management_api_url, :debug
       agent_human_labels('RabbitMQ') do
