@@ -53,6 +53,7 @@ module NewRelic
           report_metric_check_debug 'Message Rate/Acknowledge', 'messages/sec', ack_rate
           report_metric_check_debug 'Message Rate/Confirm', 'messages/sec', confirm_rate
           report_metric_check_debug 'Message Rate/Deliver', 'messages/sec', deliver_rate
+          report_metric_check_debug 'Message Rate/Redeliver', 'messages/sec', redeliver_rate
           report_metric_check_debug 'Message Rate/Publish', 'messages/sec', publish_rate
           report_metric_check_debug 'Message Rate/Return', 'messages/sec', return_unroutable_rate
 
@@ -110,24 +111,36 @@ module NewRelic
       #
       # Rates
       #
-      def ack_rate
-        rate_for 'ack'
+      def ack_rate(queue = nil)
+        rate_for('ack', queue)
       end
 
-      def confirm_rate
-        rate_for 'confirm'
+      def confirm_rate(queue = nil)
+        rate_for('confirm', queue)
       end
 
-      def deliver_rate
-        rate_for 'deliver'
+      def deliver_rate(queue = nil)
+        rate_for('deliver', queue)
       end
 
-      def publish_rate
-        rate_for 'publish'
+      def redeliver_rate(queue = nil)
+        rate_for('redeliver', queue)
       end
 
-      def rate_for(type)
-        msg_stats = rmq_manager.overview['message_stats']
+      def publish_rate(queue = nil)
+        rate_for('publish', queue)
+      end
+
+      def get_rate(queue = nil)
+        rate_for('deliver_get', queue)
+      end
+
+      def rate_for(type, queue = nil)
+        if queue.nil?
+          msg_stats = rmq_manager.overview['message_stats']
+        else
+          msg_stats = queue['message_stats']
+        end
 
         if msg_stats.is_a?(Hash)
           details = msg_stats["#{type}_details"]
@@ -163,6 +176,11 @@ module NewRelic
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Messages/Total', 'message', q['messages']
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Consumers/Total', 'consumers', q['consumers']
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Consumers/Active', 'consumers', q['active_consumers']
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Acknowledge', 'messages/sec', ack_rate(q)
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Deliver', 'messages/sec', deliver_rate(q)
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Redeliver', 'messages/sec', redeliver_rate(q)
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Publish', 'messages/sec', publish_rate(q)
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Get', 'messages/sec', get_rate(q)
         end
       end
     end
