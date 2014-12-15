@@ -75,9 +75,9 @@ module NewRelic
 
       def report_metric_check_debug(metricname, metrictype, metricvalue)
         if "#{self.debug}" == "true"
-          puts("#{metricname}[#{metrictype}] : #{metricvalue}")
+          puts("Component/#{metricname}[#{metrictype}] : #{metricvalue}")
         else
-          report_metric metricname, metrictype, metricvalue
+          report_metric 'Component/' + metricname, metrictype, metricvalue
         end
       end
       private
