@@ -77,10 +77,12 @@ module NewRelic
         if "#{self.debug}" == "true"
           puts("Component/#{metricname}[#{metrictype}] : #{metricvalue}")
         else
-          report_metric 'Component/' + metricname, metrictype, metricvalue
+          report_metric metricname, metrictype, metricvalue
         end
       end
+
       private
+
       def rmq_manager
         @rmq_manager ||= ::RabbitMQManager.new(management_api_url)
       end
@@ -167,15 +169,19 @@ module NewRelic
         rmq_manager.users.length
       end
 
+      def count(value)
+        value.nil? ? 0 : value
+      end
+
       def report_queues
         return unless rmq_manager.queues.length > 0
         rmq_manager.queues.each do |q|
           next if q['name'].start_with?('amq.gen')
-          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Messages/Ready', 'message', q['messages_ready']
-          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Memory', 'bytes', q['memory']
-          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Messages/Total', 'message', q['messages']
-          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Consumers/Total', 'consumers', q['consumers']
-          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Consumers/Active', 'consumers', q['active_consumers']
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Messages/Ready', 'message', count(q['messages_ready'])
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Memory', 'bytes', count(q['memory'])
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Messages/Total', 'message', count(q['messages'])
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Consumers/Total', 'consumers', count(q['consumers'])
+          report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Consumers/Active', 'consumers', count(q['active_consumers'])
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Acknowledge', 'messages/sec', ack_rate(q)
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Deliver', 'messages/sec', deliver_rate(q)
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Redeliver', 'messages/sec', redeliver_rate(q)
