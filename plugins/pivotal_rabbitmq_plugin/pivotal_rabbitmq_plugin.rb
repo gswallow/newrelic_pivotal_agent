@@ -35,7 +35,7 @@ module NewRelic
     class Agent < NewRelic::Plugin::Agent::Base
       agent_guid 'com.indigobio.newrelic.plugin.rabbitmq'
       agent_version '1.0.5'
-      agent_config_options :management_api_url, :debug
+      agent_config_options :management_api_url, :debug, :filter
       agent_human_labels('RabbitMQ') do
         uri = URI.parse(management_api_url)
         "#{uri.host}:#{uri.port}"
@@ -111,6 +111,13 @@ module NewRelic
       end
 
       #
+      # Open-ended queues indicate problems (so do redeliveries but wonky clients redeliver messages)
+      #
+      def has_consumers?(queue)
+        count(queue['consumers']) > 0
+      end
+
+      #
       # Rates
       #
       def ack_rate(queue = nil)
@@ -175,8 +182,10 @@ module NewRelic
 
       def report_queues
         return unless rmq_manager.queues.length > 0
+        consumerless_queues = []
+        self.filter << 'amq.gen'
         rmq_manager.queues.each do |q|
-          next if q['name'].start_with?('amq.gen')
+          next unless self.filter.select { |name| name =~ /#{q}/ }.empty?
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Messages/Ready', 'message', count(q['messages_ready'])
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Memory', 'bytes', count(q['memory'])
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Messages/Total', 'message', count(q['messages'])
@@ -187,7 +196,9 @@ module NewRelic
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Redeliver', 'messages/sec', redeliver_rate(q)
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Publish', 'messages/sec', publish_rate(q)
           report_metric_check_debug 'Queue' + q['vhost'] + q['name'] + '/Message Rate/Get', 'messages/sec', get_rate(q)
+          consumerless_queues << q unless has_consumers?(q)
         end
+        report_metric_check_debug 'Consumerless Queues', 'queues', consumerless_queues.count
       end
     end
 
