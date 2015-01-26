@@ -38,7 +38,7 @@ module NewRelic
       agent_config_options :management_api_url, :debug, :filter
       agent_human_labels('RabbitMQ') do
         uri = URI.parse(management_api_url)
-        "#{uri.host}:#{uri.port}"
+        "#{uri.host}"
       end
 
       def poll_cycle
